@@ -3,29 +3,23 @@ package com.example.banturumah
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
-import android.view.View
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.ProgressBar
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity() {
+
     lateinit var webView: WebView
     lateinit var swipeRefreshLayout: SwipeRefreshLayout
     var filePath: ValueCallback<Array<Uri>>? = null
-
-    companion object {
-        private const val FILE_UPLOAD_REQUEST_CODE = 111
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +28,49 @@ class MainActivity : AppCompatActivity() {
         webView = findViewById(R.id.WV)
         swipeRefreshLayout = findViewById(R.id.swipe_refresh)
 
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString()
+                if (url != null) {
+                    if (url.startsWith("whatsapp://send/")) {
+                        // Handle WhatsApp URL
+                        try {
+                            val parts = url.split("/send/?phone=")
+                            val phoneNumber = parts[1].substringBefore("&text=")
+                            val message = Uri.decode(parts[1].substringAfter("&text="))
+
+                            val whatsappIntent = Intent(Intent.ACTION_VIEW)
+                            whatsappIntent.data = Uri.parse("https://api.whatsapp.com/send?phone=$phoneNumber&text=$message")
+                            startActivity(whatsappIntent)
+
+                            return true
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    } else if (url.startsWith("intent://")) {
+                        // Handle the "intent://" URL scheme here
+                        try {
+                            val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+                            startActivity(intent)
+                            return true
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    } else if (url.startsWith("fb://")) {
+                        // Handle the "fb://" URL scheme here
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            startActivity(intent)
+                            return true
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+                return super.shouldOverrideUrlLoading(view, request)
+            }
+        }
+
         webView.loadUrl("https://nauvan.my.id")
 
         websettingsview()
