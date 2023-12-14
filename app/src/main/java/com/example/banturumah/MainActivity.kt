@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        webView.loadUrl("https://nauvan.my.id")
+        webView.loadUrl("https://banturumah.com")
 
         websettingsview()
 
